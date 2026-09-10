@@ -1,0 +1,4 @@
+github.com/eurozulu/colout v0.0.6 h1:MqQCj4rVlYo4g+IpOkogKBcHMWN3H7YS01VGsaY2wPQ=
+github.com/eurozulu/colout v0.0.6/go.mod h1:nk68BVV6vLQtAsnhJTLEjvzYKkebSZr/rJ0pNgLx5Fk=
+golang.org/x/text v0.22.0 h1:bofq7m3/HAFvbF51jz3Q9wLg3jkvSPuiZu/pD1XwgtM=
+golang.org/x/text v0.22.0/go.mod h1:YRoo4H8PVmsu+E3Ou7cqLVH8oXWIHVoX0jqUWALQhfY=

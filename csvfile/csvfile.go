@@ -1,0 +1,54 @@
+package csvfile
+
+import (
+	"csvparser"
+	"os"
+)
+
+type CSVFile struct {
+	Path        string               `csv:"path"`
+	Delimiter   csvparser.Delimiters `csv:"delimiters"`
+	ColumnNames []ColumnNames        `csv:"column_names"`
+	Length      int64                `csv:"length"`
+}
+
+type ColumnNames struct {
+	Offset      int64    `csv:"offset"`
+	ColumnNames []string `csv:"columns"`
+}
+
+func (f CSVFile) Rows(offset int64) (*Rows, error) {
+	file, err := os.Open(f.Path)
+	if err != nil {
+		return nil, err
+	}
+	if offset > 0 {
+		if _, err = file.Seek(offset, 0); err != nil {
+			return nil, err
+		}
+	}
+	colIndex := f.indexColumnNamesForOffset(offset)
+	r := &Rows{Size: f.Length}
+	if colIndex != -1 {
+		r.ColumnNames = &f.ColumnNames[colIndex]
+		if colIndex+1 < len(f.ColumnNames) {
+			r.Size = f.ColumnNames[colIndex+1].Offset - offset
+		}
+	}
+	in := &CountReader{
+		R:     file,
+		Limit: r.Size,
+	}
+	r.rows = csvparser.NewCsvParser(in, &f.Delimiter)
+	return r, nil
+}
+
+func (f CSVFile) indexColumnNamesForOffset(offset int64) int {
+	for i := len(f.ColumnNames) - 1; i >= 0; i-- {
+		if f.ColumnNames[i].Offset > offset {
+			continue
+		}
+		return i
+	}
+	return -1
+}
