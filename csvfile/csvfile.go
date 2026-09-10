@@ -2,7 +2,10 @@ package csvfile
 
 import (
 	"csvparser"
+	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type CSVFile struct {
@@ -51,4 +54,22 @@ func (f CSVFile) indexColumnNamesForOffset(offset int64) int {
 		return i
 	}
 	return -1
+}
+
+func ParseCSVFiles(pattern string) ([]*CSVFile, error) {
+	var files []*CSVFile
+	var errs []error
+	fileNames, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+	for _, fileName := range fileNames {
+		fz, err := ParseCSvFile(fileName)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to parse %q  %v", fileName, err))
+			continue
+		}
+		files = append(files, fz)
+	}
+	return files, errors.Join(errs...)
 }

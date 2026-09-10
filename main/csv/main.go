@@ -1,14 +1,12 @@
 package main
 
 import (
-	"os"
-	"fmt"
-	"csvparser/csvfile"
 	"bytes"
+	"csvparser/csvfile"
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
-	"path/filepath"
-	"errors"
 )
 
 func main() {
@@ -117,23 +115,14 @@ func showFileInfo(file *csvfile.CSVFile) {
 
 func parseFiles(patterns []string) ([]*csvfile.CSVFile, error) {
 	var files []*csvfile.CSVFile
-	var errs []error
 	for _, pattern := range patterns {
-		fileNames, err := filepath.Glob(pattern)
+		filez, err := csvfile.ParseCSVFiles(pattern)
 		if err != nil {
 			return nil, err
 		}
-
-		for _, fileName := range fileNames {
-			fz, err := csvfile.ParseCSvFile(fileName)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("failed to parse %q  %v", fileName, err))
-				continue
-			}
-			files = append(files, fz)
-		}
+		files = append(files, filez...)
 	}
-	return files, errors.Join(errs...)
+	return files, nil
 }
 
 func exitError(err error) {
