@@ -36,9 +36,9 @@ type Result struct {
 	Score     int      // Count * len([]rune(Delimiter)) -- runes covered
 }
 
-// DetectDelimter returns the most likely delimiter in s, or ok == false when s shows no
+// DetectColumnDelimter returns the most likely delimiter in s, or ok == false when s shows no
 // repeated separating pattern.
-func DetectDelimter(s string) (string, bool) {
+func DetectColumnDelimter(s string) (string, bool) {
 	r, ok := DetectWithOptions(s, Options{})
 	return r.Delimiter, ok
 }
@@ -52,7 +52,7 @@ func Split(s string) []string {
 	return []string{s}
 }
 
-// DetectWithOptions is DetectDelimter with explicit tuning.
+// DetectWithOptions is DetectColumnDelimter with explicit tuning.
 //
 // The algorithm:
 //

@@ -2,7 +2,6 @@ package csvparser
 
 import (
 	"io"
-	"bytes"
 )
 
 type Parser interface {
@@ -30,12 +29,7 @@ func (r *CsvParser) Row() []string {
 	if len(r.lines.Bytes()) == 0 {
 		return nil
 	}
-	cScan := NewIgnoreQuotedScanner(bytes.NewReader(r.lines.Bytes()), r.Delimiter.ColumnDelimiter)
-	var row []string
-	for cScan.Scan() {
-		row = append(row, cScan.Text())
-	}
-	return row
+	return IgnoreQuotedSplit(r.lines.Text(), r.Delimiter.ColumnDelimiter)
 }
 
 func (r *CsvParser) Err() error {

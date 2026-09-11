@@ -1,13 +1,13 @@
 package csvfile
 
 import (
+	"slices"
 	"strings"
 	"unicode"
-	"slices"
 
-	"os"
-	"io"
 	"csvparser"
+	"io"
+	"os"
 )
 
 const sampleSize = 25
@@ -92,7 +92,7 @@ func sampleRows(path string, size int, delimit *csvparser.Delimiters) ([]Row, er
 	}
 	row := p.Row()
 	if len(row) == 1 {
-		de, ok := DetectDelimter(strings.Join(row, delimit.ColumnDelimiter))
+		de, ok := DetectColumnDelimter(strings.Join(row, delimit.ColumnDelimiter))
 		if ok {
 			delimit.ColumnDelimiter = de
 			p.Delimiter.ColumnDelimiter = de
@@ -125,7 +125,7 @@ func ParseCSvFile(path string) (*CSVFile, error) {
 
 	file := &CSVFile{
 		Path:      path,
-		Delimiter: *d,
+		Delimiter: d,
 	}
 	if fi, err := os.Stat(file.Path); err == nil {
 		file.Length = fi.Size()
@@ -133,7 +133,7 @@ func ParseCSvFile(path string) (*CSVFile, error) {
 
 	idRows := findIdentifierRows(rows)
 	for _, idRow := range idRows {
-		file.ColumnNames = append(file.ColumnNames, ColumnNames{
+		file.ColumnNames = append(file.ColumnNames, &ColumnHeader{
 			ColumnNames: rows[idRow],
 			Offset:      offsetOfRow(idRow, rows, *d),
 		})

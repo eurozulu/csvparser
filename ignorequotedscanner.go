@@ -2,9 +2,9 @@ package csvparser
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"strings"
-	"bytes"
 )
 
 type IgnoreQuotedScanner struct {
@@ -119,6 +119,9 @@ func IgnoreQuotedSplitN(data string, delimiter string, n int) []string {
 		if !unlimit && len(result) >= n {
 			break
 		}
+		result = append(result, scn.Text())
+	}
+	if strings.HasSuffix(data, delimiter) {
 		result = append(result, scn.Text())
 	}
 	return result

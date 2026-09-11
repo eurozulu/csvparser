@@ -4,46 +4,43 @@ import (
 	"csvparser"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 )
 
+// CSVFile represents a single CSV text file containing one or more data sets.
+// Each file may contain zero or more sets of column header names, each representing a distinct data set within the file.
+// Column headers must be identifiers, Start with a letter and only contain letters numbers or "-_#"
+// Each header set is represented as the column name strings, along with the file offset of where those headers appear in the file.
+// Each data set is defined by the row following the header, until the next header row offset or the end of the file
+// if no further header sets exist. (File Length)
+// The File contains the delimiters found in the file.  The line delimiter is assumed to be new line.
+// The column delimiter defaults to comma but will attempt to detect an alternative if a comma yields only one column.
+// The data sets are read using the Column header offset.  This returns a Rowset of the rows from the given offset.
 type CSVFile struct {
-	Path        string               `csv:"path"`
-	Delimiter   csvparser.Delimiters `csv:"delimiters"`
-	ColumnNames []ColumnNames        `csv:"column_names"`
-	Length      int64                `csv:"length"`
+	Path        string                `csv:"path"`
+	Delimiter   *csvparser.Delimiters `csv:"delimiters"`
+	ColumnNames []*ColumnHeader       `csv:"column_names"`
+	Length      int64                 `csv:"length"`
 }
 
-type ColumnNames struct {
+type ColumnHeader struct {
 	Offset      int64    `csv:"offset"`
 	ColumnNames []string `csv:"columns"`
 }
 
-func (f CSVFile) Rows(offset int64) (*Rows, error) {
-	file, err := os.Open(f.Path)
-	if err != nil {
-		return nil, err
-	}
-	if offset > 0 {
-		if _, err = file.Seek(offset, 0); err != nil {
-			return nil, err
-		}
-	}
+func (f *CSVFile) RowSet(offset int64) (*RowSet, error) {
 	colIndex := f.indexColumnNamesForOffset(offset)
-	r := &Rows{Size: f.Length}
-	if colIndex != -1 {
-		r.ColumnNames = &f.ColumnNames[colIndex]
-		if colIndex+1 < len(f.ColumnNames) {
-			r.Size = f.ColumnNames[colIndex+1].Offset - offset
-		}
+	rs := &RowSet{
+		file:         f,
+		offset:       offset,
+		length:       f.Length - offset, // initially grab to EOF, unless another column set follows.
+		columnsIndex: colIndex,
 	}
-	in := &CountReader{
-		R:     file,
-		Limit: r.Size,
+
+	if colIndex != -1 && colIndex+1 < len(f.ColumnNames) {
+		rs.length = f.ColumnNames[colIndex+1].Offset - offset
 	}
-	r.rows = csvparser.NewCsvParser(in, &f.Delimiter)
-	return r, nil
+	return rs, rs.skipColumnNames()
 }
 
 func (f CSVFile) indexColumnNamesForOffset(offset int64) int {

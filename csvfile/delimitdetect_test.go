@@ -31,14 +31,14 @@ func TestDetect(t *testing.T) {
 	for _, c := range cases {
 		got, ok := DetectWithOptions(c.in, Options{})
 		if !ok {
-			t.Errorf("DetectDelimter(%q): no delimiter found, want %q", c.in, c.want)
+			t.Errorf("DetectColumnDelimter(%q): no delimiter found, want %q", c.in, c.want)
 			continue
 		}
 		if got.Delimiter != c.want {
-			t.Errorf("DetectDelimter(%q) = %q, want %q", c.in, got.Delimiter, c.want)
+			t.Errorf("DetectColumnDelimter(%q) = %q, want %q", c.in, got.Delimiter, c.want)
 		}
 		if !reflect.DeepEqual(got.Fields, c.fields) {
-			t.Errorf("DetectDelimter(%q) fields = %q, want %q", c.in, got.Fields, c.fields)
+			t.Errorf("DetectColumnDelimter(%q) fields = %q, want %q", c.in, got.Fields, c.fields)
 		}
 	}
 }
@@ -62,25 +62,25 @@ func TestQuoted(t *testing.T) {
 	for _, c := range cases {
 		got, ok := DetectWithOptions(c.in, Options{})
 		if ok != c.ok {
-			t.Errorf("DetectDelimter(%q) ok = %v (%q), want %v", c.in, ok, got.Delimiter, c.ok)
+			t.Errorf("DetectColumnDelimter(%q) ok = %v (%q), want %v", c.in, ok, got.Delimiter, c.ok)
 			continue
 		}
 		if !ok {
 			continue
 		}
 		if got.Delimiter != c.want {
-			t.Errorf("DetectDelimter(%q) = %q, want %q", c.in, got.Delimiter, c.want)
+			t.Errorf("DetectColumnDelimter(%q) = %q, want %q", c.in, got.Delimiter, c.want)
 		}
 		if !reflect.DeepEqual(got.Fields, c.fields) {
-			t.Errorf("DetectDelimter(%q) fields = %q, want %q", c.in, got.Fields, c.fields)
+			t.Errorf("DetectColumnDelimter(%q) fields = %q, want %q", c.in, got.Fields, c.fields)
 		}
 	}
 }
 
 func TestNoDelimiter(t *testing.T) {
 	for _, in := range []string{"", "x", "aaaa", "hello"} {
-		if d, ok := DetectDelimter(in); ok {
-			t.Errorf("DetectDelimter(%q) = %q, want no delimiter", in, d)
+		if d, ok := DetectColumnDelimter(in); ok {
+			t.Errorf("DetectColumnDelimter(%q) = %q, want no delimiter", in, d)
 		}
 	}
 }
@@ -110,6 +110,6 @@ func BenchmarkDetect(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		DetectDelimter(s)
+		DetectColumnDelimter(s)
 	}
 }

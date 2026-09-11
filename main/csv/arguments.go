@@ -4,27 +4,19 @@ import "strings"
 
 type Arguments []string
 
-func (a Arguments) ContainsFlag(name string) bool {
-	return a.IndexOfFlag(name) != -1
-}
-
-func (a Arguments) IndexOfFlag(name string) int {
-	for i := 0; i < len(a); i++ {
-		if !strings.HasPrefix(a[i], "-") {
-			continue
-		}
-		f := strings.TrimLeft(a[i], "-")
-		if f == name {
-			return i
-		}
+func (a Arguments) ContainsFlag(name string, alt ...string) bool {
+	if a.IndexOfFlag(name) != -1 {
+		return true
 	}
-	return -1
+	return a.findAlt(alt) != -1
 }
 
-func (a Arguments) Flag(name string) (string, bool) {
+func (a Arguments) Flag(name string, alt ...string) (string, bool) {
 	i := a.IndexOfFlag(name)
-	if i == -1 {
-		return "", false
+	if i == -1 && len(alt) > 0 {
+		if i = a.findAlt(alt); i == -1 {
+			return "", false
+		}
 	}
 	if i+1 >= len(a) || strings.HasPrefix(a[i+1], "-") {
 		return "", true
@@ -44,4 +36,26 @@ func (a Arguments) Parameters() []string {
 		}
 	}
 	return params
+}
+
+func (a Arguments) IndexOfFlag(name string) int {
+	for i := 0; i < len(a); i++ {
+		if !strings.HasPrefix(a[i], "-") {
+			continue
+		}
+		f := strings.TrimLeft(a[i], "-")
+		if f == name {
+			return i
+		}
+	}
+	return -1
+}
+
+func (a Arguments) findAlt(names []string) int {
+	for _, name := range names {
+		if i := a.IndexOfFlag(name); i != -1 {
+			return i
+		}
+	}
+	return -1
 }
