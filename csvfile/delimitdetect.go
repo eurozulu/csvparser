@@ -1,11 +1,3 @@
-// Package delimiter detects the delimiter used inside a single string by
-// looking for the most repeated character pattern that cleanly separates the
-// string into non-empty fields.
-//
-// Text inside double quotes is ignored when looking for a delimiter: a quoted
-// section is field content, so `a,"b,c",d` splits on "," into three fields and
-// `"one, two, three"` has no delimiter at all. The quoted text is still part of
-// the field it belongs to -- only the search for delimiter candidates skips it.
 package csvfile
 
 import "unicode"
@@ -45,12 +37,12 @@ func DetectColumnDelimter(s string) (string, bool) {
 
 // Split splits s on its detected delimiter. When no delimiter is found the
 // whole string is returned as a single field.
-func Split(s string) []string {
-	if r, ok := DetectWithOptions(s, Options{}); ok {
-		return r.Fields
-	}
-	return []string{s}
-}
+//func Split(s string) []string {
+//	if r, ok := DetectWithOptions(s, Options{}); ok {
+//		return r.Fields
+//	}
+//	return []string{s}
+//}
 
 // DetectWithOptions is DetectColumnDelimter with explicit tuning.
 //

@@ -53,50 +53,6 @@ func (sc *IgnoreQuotedScanner) splitLinesFunc(data []byte, eof bool) (advance in
 	return 0, nil, nil
 }
 
-func doubleQuote(s string) string {
-	if isDoubleQuoted(s) {
-		return s
-	}
-	sb := &strings.Builder{}
-	sb.WriteRune('"')
-	sb.WriteString(escapeQuotes(s))
-	sb.WriteRune('"')
-	return sb.String()
-}
-
-func undoubleQuote(s string) string {
-	if !isDoubleQuoted(s) {
-		return s
-	}
-	return unescapeQuotes(strings.Trim(s, "\""))
-}
-
-func isDoubleQuoted(s string) bool {
-	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
-}
-
-func escapeQuotes(s string) string {
-	sb := &strings.Builder{}
-	for len(s) > 0 {
-		i := strings.Index(s, "\"")
-		if i == -1 {
-			sb.WriteString(s)
-			break
-		}
-		sb.WriteString(s[:i])
-		if i > 0 && s[i-1] != '\\' {
-			sb.WriteRune('\\')
-		}
-		sb.WriteString(s[i : i+1])
-		s = s[i+1:]
-	}
-	return sb.String()
-}
-
-func unescapeQuotes(s string) string {
-	return strings.ReplaceAll(s, "\\\"", "\"")
-}
-
 func NewIgnoreQuotedScanner(r io.Reader, delimiter string) *IgnoreQuotedScanner {
 	rwz := &IgnoreQuotedScanner{
 		delimit:     delimiter,

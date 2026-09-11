@@ -8,9 +8,11 @@ import (
 )
 
 // CSVFile represents a single CSV text file containing one or more data sets.
-// Each file may contain zero or more sets of column header names, each representing a distinct data set within the file.
+// Each file may contain zero or more sets of column header names,
+// each representing a distinct data set within the file.
 // Column headers must be identifiers, Start with a letter and only contain letters numbers or "-_#"
-// Each header set is represented as the column name strings, along with the file offset of where those headers appear in the file.
+// Each header set is represented as the column name strings,
+// along with the file offset of where those headers appear in the file.
 // Each data set is defined by the row following the header, until the next header row offset or the end of the file
 // if no further header sets exist. (File Length)
 // The File contains the delimiters found in the file.  The line delimiter is assumed to be new line.
@@ -43,7 +45,7 @@ func (f *CSVFile) RowSet(offset int64) (*RowSet, error) {
 	return rs, rs.skipColumnNames()
 }
 
-func (f CSVFile) indexColumnNamesForOffset(offset int64) int {
+func (f *CSVFile) indexColumnNamesForOffset(offset int64) int {
 	for i := len(f.ColumnNames) - 1; i >= 0; i-- {
 		if f.ColumnNames[i].Offset > offset {
 			continue

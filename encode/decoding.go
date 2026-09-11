@@ -78,7 +78,8 @@ func UnmarshallCSV(data []byte, v any, delimiters ...*csvparser.Delimiters) erro
 		}
 		cv, err := StringAsType(row[count], fld.Type)
 		if err != nil {
-			return fmt.Errorf("could not convert %q into type %s for Field %s  %v", row[count], fld.Type.String(), fld.Name, err)
+			return fmt.Errorf("could not convert %q into type %s for Field %s  %v",
+				row[count], fld.Type.String(), fld.Name, err)
 		}
 		val.Field(i).Set(cv)
 	}

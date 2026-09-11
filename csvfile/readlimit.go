@@ -23,6 +23,6 @@ func (r *ReadLimit) Read(p []byte) (n int, err error) {
 	return
 }
 
-func (r ReadLimit) Close() error {
+func (r *ReadLimit) Close() error {
 	return r.in.Close()
 }

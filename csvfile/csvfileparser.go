@@ -22,13 +22,13 @@ func IsIdentifier(s string) bool {
 	if len(r) == 0 {
 		return false
 	}
-	if !unicode.IsLetter(rune(r[0])) && !slices.Contains([]rune(ColumnNameChars), r[0]) {
+	if !unicode.IsLetter(r[0]) && !slices.Contains([]rune(ColumnNameChars), r[0]) {
 		return false
 	}
 	idChars := []rune(ColumnNameChars)
 	for _, c := range r[1:] {
 		if !unicode.IsLetter(c) &&
-			!unicode.IsNumber(rune(c)) &&
+			!unicode.IsNumber(c) &&
 			!slices.Contains(idChars, c) {
 			return false
 		}

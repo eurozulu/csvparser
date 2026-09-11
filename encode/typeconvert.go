@@ -3,7 +3,7 @@ package encode
 import (
 	"encoding"
 	"fmt"
-	"github.com/eurozulu/csvparser"
+	"github.com/eurozulu/csvparser/utils"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -40,7 +40,7 @@ func TypeAsString(v any) string {
 
 	switch t.Kind() {
 	case reflect.String:
-		return csvparser.doubleQuote(v.(string))
+		return utils.DoubleQuote(v.(string))
 	case reflect.Bool:
 		return strconv.FormatBool(v.(bool))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -50,10 +50,10 @@ func TypeAsString(v any) string {
 	case reflect.Float32, reflect.Float64:
 		return strconv.FormatFloat(v.(float64), 'g', -1, 64)
 	case reflect.Slice:
-		return csvparser.doubleQuote(sliceAsString(v))
+		return utils.DoubleQuote(sliceAsString(v))
 
 	default:
-		return fmt.Sprintf("%v", v)
+		return utils.DoubleQuote(fmt.Sprintf("%v", v))
 	}
 }
 
@@ -69,7 +69,7 @@ func StringAsType(s string, tp reflect.Type) (reflect.Value, error) {
 
 	switch t.Kind() {
 	case reflect.String:
-		return reflect.ValueOf(s), nil
+		return reflect.ValueOf(utils.UndoubleQuote(s)), nil
 	case reflect.Bool:
 		b, err := strconv.ParseBool(s)
 		if err != nil {
@@ -148,25 +148,25 @@ func StringAsType(s string, tp reflect.Type) (reflect.Value, error) {
 		if tp.Implements(textUnmarshalerType) {
 			v := reflect.New(tp)
 			if err := v.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(s)); err != nil {
-				return reflect.Value{}, fmt.Errorf("Failed to unmarshal %q as text %v", s, err)
+				return reflect.Value{}, fmt.Errorf("failed to unmarshal %q as text %v", s, err)
 			}
 			return v.Elem(), nil
 		}
 		if tp.Implements(binaryUnmarshalerType) {
 			v := reflect.New(tp)
 			if err := v.Interface().(encoding.BinaryUnmarshaler).UnmarshalBinary([]byte(s)); err != nil {
-				return reflect.Value{}, fmt.Errorf("Failed to unmarshal %q as binary %v", s, err)
+				return reflect.Value{}, fmt.Errorf("failed to unmarshal %q as binary %v", s, err)
 			}
 			return v.Elem(), nil
 		}
 		if urlType.AssignableTo(tp) {
 			u, err := url.Parse(s)
 			if err != nil {
-				return reflect.Value{}, fmt.Errorf("Failed to parse %q as URL %v", s, err)
+				return reflect.Value{}, fmt.Errorf("failed to parse %q as URL %v", s, err)
 			}
 			return reflect.ValueOf(u).Elem(), nil
 		}
-		return reflect.Value{}, fmt.Errorf("Unsupported type: %s", t.String())
+		return reflect.Value{}, fmt.Errorf("unsupported type: %s", t.String())
 	}
 }
 

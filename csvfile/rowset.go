@@ -23,8 +23,9 @@ type RowSet struct {
 	length       int64
 }
 
+//goland:noinspection GoMaybeNil
 func (r *RowSet) ColumnNames() []string {
-	if !r.HasColumnNames() {
+	if r == nil || !r.HasColumnNames() {
 		return nil
 	}
 	return r.columnNames().ColumnNames
@@ -92,7 +93,8 @@ func (r *RowSet) skipColumnNames() error {
 	return nil
 }
 
-func (r RowSet) openFile() (io.ReadCloser, error) {
+//goland:noinspection GoResourceLeak
+func (r *RowSet) openFile() (io.ReadCloser, error) {
 	if r.offset >= r.length {
 		return nil, io.EOF
 	}

@@ -3,9 +3,11 @@ package csvparser
 import (
 	"bytes"
 	"fmt"
+	"github.com/eurozulu/csvparser/utils"
 	"strings"
 )
 
+// Delimiters represent the delimiters used in the CSV file.
 type Delimiters struct {
 	LineDelimiter   string
 	ColumnDelimiter string
@@ -29,13 +31,13 @@ func DelimiterOrDefault(delimiters ...*Delimiters) *Delimiters {
 func (d *Delimiters) String() string {
 	ld := d.LineDelimiter
 	if strings.Contains(ld, " ") {
-		ld = doubleQuote(ld)
+		ld = utils.DoubleQuote(ld)
 	}
 	buf := bytes.NewBufferString(ld)
 	buf.WriteRune(' ')
 	cd := d.ColumnDelimiter
 	if strings.Contains(cd, " ") {
-		cd = doubleQuote(cd)
+		cd = utils.DoubleQuote(cd)
 	}
 	buf.WriteString(cd)
 	return buf.String()
@@ -49,7 +51,7 @@ func (d *Delimiters) UnmarshalText(text []byte) error {
 	iqs := NewIgnoreQuotedScanner(bytes.NewReader(text), " ")
 	var segs []string
 	for iqs.Scan() {
-		v := unescapeQuotes(iqs.Text())
+		v := utils.UnescapeQuotes(iqs.Text())
 		segs = append(segs, v)
 		if len(segs) > 2 {
 			return fmt.Errorf("invalid delimiter string %q", v)
