@@ -1,12 +1,12 @@
 package encode
 
 import (
-	"reflect"
-	"errors"
 	"bytes"
-	"strings"
+	"errors"
+	"github.com/eurozulu/csvparser"
 	"io"
-	"csvparser"
+	"reflect"
+	"strings"
 )
 
 type CSVMarshaller interface {

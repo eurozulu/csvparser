@@ -1,9 +1,9 @@
 package csvfile
 
 import (
-	"csvparser"
 	"errors"
 	"fmt"
+	"github.com/eurozulu/csvparser"
 	"path/filepath"
 )
 

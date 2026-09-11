@@ -1,13 +1,13 @@
 package encode
 
 import (
-	"strings"
-	"strconv"
-	"fmt"
-	"reflect"
 	"encoding"
+	"fmt"
+	"github.com/eurozulu/csvparser"
 	"net/url"
-	"csvparser"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 var (

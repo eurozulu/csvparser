@@ -1,8 +1,8 @@
 package csvfile
 
 import (
-	"csvparser"
 	"fmt"
+	"github.com/eurozulu/csvparser"
 	"io"
 	"os"
 	"strings"

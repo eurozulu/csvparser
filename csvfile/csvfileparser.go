@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"csvparser"
+	"github.com/eurozulu/csvparser"
 	"io"
 	"os"
 )

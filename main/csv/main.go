@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-	"csvparser/csvfile"
 	"fmt"
+	"github.com/eurozulu/csvparser/csvfile"
 	"io"
 	"os"
 	"strconv"
