@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const CSVTag = "csv"
+
 type CSVMarshaller interface {
 	MarshalCSV() ([]byte, error)
 }
@@ -27,7 +29,7 @@ func fieldNamesOfStruct(v any) []string {
 		if !fld.IsExported() {
 			continue
 		}
-		if tag, ok := fld.Tag.Lookup("csv"); ok {
+		if tag, ok := fld.Tag.Lookup(CSVTag); ok {
 			if tag == "-" {
 				continue
 			}
@@ -89,7 +91,7 @@ func MarshallCSV(v any, delimiters ...*csvparser.Delimiters) ([]byte, error) {
 		if !fld.IsExported() {
 			continue
 		}
-		tags := strings.Split(fld.Tag.Get("csv"), ",")
+		tags := strings.Split(fld.Tag.Get(CSVTag), ",")
 		if tags[0] == "-" {
 			continue
 		}
