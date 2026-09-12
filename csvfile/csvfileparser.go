@@ -1,6 +1,8 @@
 package csvfile
 
 import (
+	"errors"
+	"fmt"
 	"github.com/eurozulu/csvparser"
 	"github.com/eurozulu/csvparser/utils"
 	"io"
@@ -119,4 +121,18 @@ func ParseCSvFile(path string) (*CSVFile, error) {
 		})
 	}
 	return file, nil
+}
+
+func ParseCSVFiles(fileNames []string) ([]*CSVFile, error) {
+	var files []*CSVFile
+	var errs []error
+	for _, fileName := range fileNames {
+		fz, err := ParseCSvFile(fileName)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to parse %q  %v", fileName, err))
+			continue
+		}
+		files = append(files, fz)
+	}
+	return files, errors.Join(errs...)
 }

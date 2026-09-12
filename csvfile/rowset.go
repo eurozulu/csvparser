@@ -41,12 +41,9 @@ func (r *RowSet) Rows(rowCount int) ([]Row, error) {
 		return nil, err
 	}
 	defer f.Close()
-	lf := &ReadLimit{
-		Limit: r.length,
-		in:    f,
-	}
+	lr := io.LimitReader(f, r.length)
 	rows := make([]Row, 0, rowCount)
-	p := csvparser.NewCsvParser(lf, r.file.Delimiter)
+	p := csvparser.NewCsvParser(lr, r.file.Delimiter)
 	filterCols := len(r.columnIndexes) > 0
 	for p.Scan() {
 		if rowCount >= 0 && len(rows) >= rowCount {

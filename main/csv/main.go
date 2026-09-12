@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eurozulu/csvparser/csvfile"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -63,7 +64,7 @@ func main() {
 
 func showhelp() {
 	fmt.Println("Usage: csv [options] <csvfile file patter> [<csv file patter>...]")
-	fmt.Println("Options:")
+	fmt.Println("delimitOptions:")
 	fmt.Println("  -i, --info\t Display only meta data about the files")
 	fmt.Println("  -h, --show-headers\t Display column header names")
 	fmt.Println("  -n, --column-names\t specify comma delimited list of column names to display")
@@ -75,7 +76,14 @@ func showhelp() {
 func parseFiles(patterns []string) ([]*csvfile.CSVFile, error) {
 	var files []*csvfile.CSVFile
 	for _, pattern := range patterns {
-		filez, err := csvfile.ParseCSVFiles(pattern)
+		fileNames, err := filepath.Glob(pattern)
+		if err != nil {
+			return nil, err
+		}
+		if len(fileNames) == 0 {
+			return nil, fmt.Errorf("no files found with %q", pattern)
+		}
+		filez, err := csvfile.ParseCSVFiles(fileNames)
 		if err != nil {
 			return nil, err
 		}

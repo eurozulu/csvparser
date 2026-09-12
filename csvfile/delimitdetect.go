@@ -2,9 +2,9 @@ package csvfile
 
 import "unicode"
 
-// Options tunes the detector. The zero value is usable and gives the defaults
+// delimitOptions tunes the detector. The zero value is usable and gives the defaults
 // described on each field.
-type Options struct {
+type delimitOptions struct {
 	// MaxLen is the longest delimiter considered, in runes.
 	// 0 means "auto": min(16, len(s)/2).
 	MaxLen int
@@ -21,7 +21,7 @@ type Options struct {
 }
 
 // Result describes a detected delimiter.
-type Result struct {
+type delimitResult struct {
 	Delimiter string   // the delimiter itself
 	Count     int      // non-overlapping occurrences used for the split
 	Fields    []string // the string split on those occurrences
@@ -31,20 +31,20 @@ type Result struct {
 // DetectColumnDelimter returns the most likely delimiter in s, or ok == false when s shows no
 // repeated separating pattern.
 func DetectColumnDelimter(s string) (string, bool) {
-	r, ok := DetectWithOptions(s, Options{})
+	r, ok := detectWithOptions(s, delimitOptions{})
 	return r.Delimiter, ok
 }
 
 // Split splits s on its detected delimiter. When no delimiter is found the
 // whole string is returned as a single field.
 //func Split(s string) []string {
-//	if r, ok := DetectWithOptions(s, Options{}); ok {
+//	if r, ok := DetectWithOptions(s, delimitOptions{}); ok {
 //		return r.Fields
 //	}
 //	return []string{s}
 //}
 
-// DetectWithOptions is DetectColumnDelimter with explicit tuning.
+// detectWithOptions is DetectColumnDelimter with explicit tuning.
 //
 // The algorithm:
 //
@@ -72,7 +72,7 @@ func DetectColumnDelimter(s string) (string, bool) {
 //
 // Cost is O(n * MaxLen) time and space: each of the n*MaxLen substrings is
 // recorded once, and validating a candidate is linear in its own occurrences.
-func DetectWithOptions(s string, opt Options) (Result, bool) {
+func detectWithOptions(s string, opt delimitOptions) (delimitResult, bool) {
 	runes := []rune(s)
 	n := len(runes)
 
@@ -88,7 +88,7 @@ func DetectWithOptions(s string, opt Options) (Result, bool) {
 		minCount = 2
 	}
 	if n < 2 || maxLen < 1 {
-		return Result{}, false
+		return delimitResult{}, false
 	}
 
 	// 0. Everything between a pair of double quotes is field content.
@@ -113,7 +113,7 @@ func DetectWithOptions(s string, opt Options) (Result, bool) {
 	}
 
 	// 2-4. Validate and score.
-	var best Result
+	var best delimitResult
 	var bestFirst int
 	found := false
 	for cand, starts := range positions {
@@ -128,7 +128,7 @@ func DetectWithOptions(s string, opt Options) (Result, bool) {
 		if !separates(hits, l) {
 			continue
 		}
-		r := Result{
+		r := delimitResult{
 			Delimiter: cand,
 			Count:     len(hits),
 			Fields:    fields(runes, hits, l),
@@ -187,7 +187,7 @@ func fields(runes []rune, hits []int, l int) []string {
 
 // better ranks a against b: punctuation-only first, then coverage, then
 // occurrence count, then length, then the earlier first occurrence.
-func better(a, b Result, aFirst, bFirst int) bool {
+func better(a, b delimitResult, aFirst, bFirst int) bool {
 	if pa, pb := isPunct(a.Delimiter), isPunct(b.Delimiter); pa != pb {
 		return pa
 	}
@@ -205,10 +205,10 @@ func better(a, b Result, aFirst, bFirst int) bool {
 
 // punctuationFallback handles strings with a single separator, e.g. "one::two".
 // Quoted runes count as text, so they bound a run without ever joining it.
-func punctuationFallback(runes []rune, quoted []bool) (Result, bool) {
+func punctuationFallback(runes []rune, quoted []bool) (delimitResult, bool) {
 	n := len(runes)
 	text := func(i int) bool { return quoted[i] || isWord(runes[i]) }
-	var best Result
+	var best delimitResult
 	for i := 0; i < n; {
 		if text(i) {
 			i++
@@ -219,7 +219,7 @@ func punctuationFallback(runes []rune, quoted []bool) (Result, bool) {
 			j++
 		}
 		if i > 0 && j < n && j-i > best.Score { // text on both sides
-			best = Result{
+			best = delimitResult{
 				Delimiter: string(runes[i:j]),
 				Count:     1,
 				Fields:    []string{string(runes[:i]), string(runes[j:])},

@@ -29,7 +29,7 @@ func TestDetect(t *testing.T) {
 			[]string{"the", "cat", "and", "the", "dog", "and", "the", "bird"}},
 	}
 	for _, c := range cases {
-		got, ok := DetectWithOptions(c.in, Options{})
+		got, ok := detectWithOptions(c.in, delimitOptions{})
 		if !ok {
 			t.Errorf("DetectColumnDelimter(%q): no delimiter found, want %q", c.in, c.want)
 			continue
@@ -60,7 +60,7 @@ func TestQuoted(t *testing.T) {
 		{`a,"b,c`, ",", []string{"a", `"b`, "c"}, true},  // unterminated quote is a plain rune
 	}
 	for _, c := range cases {
-		got, ok := DetectWithOptions(c.in, Options{})
+		got, ok := detectWithOptions(c.in, delimitOptions{})
 		if ok != c.ok {
 			t.Errorf("DetectColumnDelimter(%q) ok = %v (%q), want %v", c.in, ok, got.Delimiter, c.ok)
 			continue
@@ -87,17 +87,17 @@ func TestNoDelimiter(t *testing.T) {
 
 func TestPunctuationOnly(t *testing.T) {
 	// By default a word-rune delimiter is allowed when nothing better repeats.
-	if got, _ := DetectWithOptions("aXbXcXd", Options{}); got.Delimiter != "X" {
+	if got, _ := detectWithOptions("aXbXcXd", delimitOptions{}); got.Delimiter != "X" {
 		t.Errorf("default = %q, want %q", got.Delimiter, "X")
 	}
 	// With PunctuationOnly there is no candidate left at all.
-	if got, ok := DetectWithOptions("aXbXcXd", Options{PunctuationOnly: true}); ok {
+	if got, ok := detectWithOptions("aXbXcXd", delimitOptions{PunctuationOnly: true}); ok {
 		t.Errorf("PunctuationOnly = %q, want no delimiter", got.Delimiter)
 	}
 }
 
 func TestUnicode(t *testing.T) {
-	got, ok := DetectWithOptions("één…twee…drie", Options{})
+	got, ok := detectWithOptions("één…twee…drie", delimitOptions{})
 	if !ok || got.Delimiter != "…" {
 		t.Errorf("got %q (%v), want \"…\"", got.Delimiter, ok)
 	}

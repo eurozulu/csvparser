@@ -1,11 +1,12 @@
 package csvfile
 
 import (
-	"errors"
+	"crypto/sha1"
 	"fmt"
 	"github.com/eurozulu/csvparser"
 	"github.com/eurozulu/csvparser/utils"
-	"path/filepath"
+	"io"
+	"os"
 	"slices"
 	"strings"
 )
@@ -63,6 +64,20 @@ func (f *CSVFile) RowSet(columnNames ...string) (*RowSet, error) {
 	return rs, rs.skipColumnNames()
 }
 
+func (f *CSVFile) FileHash() ([]byte, error) {
+	r, err := os.Open(f.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	h := sha1.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return nil, err
+	}
+	return h.Sum(nil), nil
+}
+
 func (f *CSVFile) indexOfHeaderByNames(names ColumnNames) int {
 	for i := len(f.ColumnHeaders) - 1; i >= 0; i-- {
 		if !utils.ContainsAll(f.ColumnHeaders[i].ColumnNames, names) {
@@ -79,25 +94,4 @@ func (f *CSVFile) indexesOfColumnNames(headNames, colNames []string) []int {
 		indexes[i] = slices.Index(headNames, name)
 	}
 	return indexes
-}
-
-func ParseCSVFiles(pattern string) ([]*CSVFile, error) {
-	var files []*CSVFile
-	var errs []error
-	fileNames, err := filepath.Glob(pattern)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileNames) == 0 {
-		return nil, fmt.Errorf("no files found in %s", pattern)
-	}
-	for _, fileName := range fileNames {
-		fz, err := ParseCSvFile(fileName)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to parse %q  %v", fileName, err))
-			continue
-		}
-		files = append(files, fz)
-	}
-	return files, errors.Join(errs...)
 }
