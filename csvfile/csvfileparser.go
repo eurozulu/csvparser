@@ -133,8 +133,8 @@ func ParseCSvFile(path string) (*CSVFile, error) {
 
 	idRows := findIdentifierRows(rows)
 	for _, idRow := range idRows {
-		file.ColumnNames = append(file.ColumnNames, &ColumnHeader{
-			ColumnNames: rows[idRow],
+		file.ColumnHeaders = append(file.ColumnHeaders, &ColumnHeader{
+			ColumnNames: ColumnNames(rows[idRow]),
 			Offset:      offsetOfRow(idRow, rows, *d),
 		})
 	}

@@ -1,7 +1,6 @@
 package csvfile
 
 import (
-	"fmt"
 	"github.com/eurozulu/csvparser"
 	"io"
 	"os"
@@ -17,10 +16,11 @@ type Row []string
 // If the  call to rows requests a number exceeding the available rows, the full number available is returned
 // and the Rowset will be empty
 type RowSet struct {
-	file         *CSVFile
-	columnsIndex int
-	offset       int64
-	length       int64
+	file          *CSVFile
+	headerIndex   int
+	offset        int64
+	length        int64
+	columnIndexes []int
 }
 
 //goland:noinspection GoMaybeNil
@@ -32,13 +32,10 @@ func (r *RowSet) ColumnNames() []string {
 }
 
 func (r *RowSet) HasRows() bool {
-	return r.offset < r.length
+	return r.length > 0
 }
 
 func (r *RowSet) Rows(rowCount int) ([]Row, error) {
-	zz, _ := os.ReadFile(r.file.Path)
-	fmt.Println(string(zz))
-
 	f, err := r.openFile()
 	if err != nil {
 		return nil, err
@@ -50,24 +47,29 @@ func (r *RowSet) Rows(rowCount int) ([]Row, error) {
 	}
 	rows := make([]Row, 0, rowCount)
 	p := csvparser.NewCsvParser(lf, r.file.Delimiter)
+	filterCols := len(r.columnIndexes) > 0
 	for p.Scan() {
 		if rowCount >= 0 && len(rows) >= rowCount {
-			break
+			return rows, p.Err()
 		}
 		row := p.Row()
 		size := int64(r.rowLength(row))
-		rows = append(rows, row)
 		r.offset += size
 		r.length -= size
+		if filterCols {
+			row = filterColumns(row, r.columnIndexes)
+		}
+		rows = append(rows, row)
+
 	}
-	if p.Err() != nil {
-		return nil, p.Err()
-	}
-	return rows, nil
+	// reached end of rows,
+	r.offset = r.file.Length
+	r.length = 0
+	return rows, p.Err()
 }
 
 func (r *RowSet) HasColumnNames() bool {
-	return r.columnsIndex >= 0 && r.columnsIndex < len(r.file.ColumnNames)
+	return r.headerIndex >= 0 && r.headerIndex < len(r.file.ColumnHeaders)
 }
 
 func (r *RowSet) rowLength(row Row) int {
@@ -79,7 +81,7 @@ func (r *RowSet) columnNames() *ColumnHeader {
 	if !r.HasColumnNames() {
 		return nil
 	}
-	return r.file.ColumnNames[r.columnsIndex]
+	return r.file.ColumnHeaders[r.headerIndex]
 }
 
 func (r *RowSet) skipColumnNames() error {
@@ -93,9 +95,21 @@ func (r *RowSet) skipColumnNames() error {
 	return nil
 }
 
+func filterColumns(row Row, colIndexes []int) Row {
+	var result Row
+	for _, colIndex := range colIndexes {
+		var cell string
+		if colIndex >= 0 && colIndex < len(row) {
+			cell = row[colIndex]
+		}
+		result = append(result, cell)
+	}
+	return result
+}
+
 //goland:noinspection GoResourceLeak
 func (r *RowSet) openFile() (io.ReadCloser, error) {
-	if r.offset >= r.length {
+	if r.offset >= r.file.Length {
 		return nil, io.EOF
 	}
 	file, err := os.Open(r.file.Path)

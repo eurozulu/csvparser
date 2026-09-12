@@ -1,41 +1,43 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/eurozulu/csvparser/csvfile"
-	"io"
 	"os"
-	"strconv"
-	"strings"
+	"time"
 )
 
 func main() {
+	start := time.Now()
+	defer func() {
+		fmt.Printf("Took: %v\n", time.Since(start))
+	}()
+
 	args := Arguments(os.Args[1:])
 	if args.ContainsFlag("help", "?") {
 		showhelp()
 		return
 	}
 
-	fileNames := args.Parameters()
-	if len(fileNames) == 0 {
+	patterns := args.Parameters()
+	if len(patterns) == 0 {
 		showhelp()
 		exitError(fmt.Errorf("must provide a filename of the csv file to parse"))
 	}
-	if flg, ok := args.Flag("line-delimit", "dl"); ok {
+	if flg, ok := args.Flag("line-delimit", "l"); ok {
 		if flg == "" {
 			exitError(fmt.Errorf("must provide a line delimiter"))
 		}
 		csvfile.CustomLineDelimiter = flg
 	}
-	if flg, ok := args.Flag("column-delimit", "dc"); ok {
+	if flg, ok := args.Flag("column-delimit", "c"); ok {
 		if flg == "" {
 			exitError(fmt.Errorf("must provide a column delimiter"))
 		}
 		csvfile.CustomColumnDelimiter = flg
 	}
 
-	filez, err := parseFiles(fileNames)
+	filez, err := parseFiles(patterns)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		if len(filez) == 0 {
@@ -43,13 +45,18 @@ func main() {
 		}
 	}
 
-	if _, ok := args.Flag("file-info", "info"); ok {
-		showFilesInfo(filez)
+	if _, ok := args.Flag("info", "i"); ok {
+		fileShow{}.ShowFilesInfo(filez)
 		return
 	}
-	showColHead := args.ContainsFlag("show-headers", "h")
 
-	if err = showFilesData(filez, showColHead); err != nil {
+	colNames, _ := args.Flag("column-names", "n")
+	rShow := &rowShow{
+		ShowHeaders: args.ContainsFlag("show-headers", "h"),
+		ColumnNames: colNames,
+	}
+
+	if err = rShow.ShowFiles(filez); err != nil {
 		exitError(err)
 	}
 }
@@ -57,93 +64,12 @@ func main() {
 func showhelp() {
 	fmt.Println("Usage: csv [options] <csvfile file patter> [<csv file patter>...]")
 	fmt.Println("Options:")
-	fmt.Println("  -info, --file-info\t Display only meta data about the files")
+	fmt.Println("  -i, --info\t Display only meta data about the files")
 	fmt.Println("  -h, --show-headers\t Display column header names")
+	fmt.Println("  -n, --column-names\t specify comma delimited list of column names to display")
 
-	fmt.Println("  -dl, --line-delimit\t specify a line delimiter (defaults to new line")
-	fmt.Println("  -cl, --column-delimit\t specify a line delimiter (defaults to new line")
-}
-
-func showFilesData(files []*csvfile.CSVFile, showHead bool) error {
-	for _, f := range files {
-		fmt.Println(f.Path)
-		if err := showFileRows(f, showHead); err != nil {
-			return err
-		}
-		fmt.Println()
-	}
-	return nil
-}
-
-func showFileRows(f *csvfile.CSVFile, showHead bool) error {
-	if len(f.ColumnNames) == 0 {
-		rows, err := f.RowSet(0)
-		if err != nil {
-			return err
-		}
-		if err = showRows(rows, f.Delimiter.ColumnDelimiter); err != nil {
-			return err
-		}
-	}
-
-	for _, header := range f.ColumnNames {
-		if showHead {
-			fmt.Println(strings.Join(header.ColumnNames, f.Delimiter.ColumnDelimiter))
-		}
-		rows, err := f.RowSet(header.Offset)
-		if err != nil {
-			return err
-		}
-		if err = showRows(rows, f.Delimiter.ColumnDelimiter); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func showRows(rows *csvfile.RowSet, delimiter string) error {
-	for rows.HasRows() {
-		r, err := rows.Rows(255)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		for _, l := range r {
-			fmt.Println(strings.Join(l, delimiter))
-		}
-	}
-	return nil
-}
-func showFilesInfo(files []*csvfile.CSVFile) {
-	for _, file := range files {
-		showFileInfo(file)
-	}
-}
-
-func showFileInfo(file *csvfile.CSVFile) {
-	buf := bytes.NewBuffer(nil)
-	buf.WriteString("Path: ")
-	buf.WriteString(file.Path)
-	buf.WriteString("\n")
-	buf.WriteString("Line/Column delimiters: ")
-	buf.WriteString(strconv.Quote(file.Delimiter.String()))
-	buf.WriteString("\n")
-	buf.WriteString("length: ")
-	buf.WriteString(strconv.FormatInt(file.Length, 10))
-	buf.WriteString("\n")
-	if len(file.ColumnNames) == 0 {
-		buf.WriteString("<no column names found>\n")
-	} else {
-		buf.WriteString("Column names:\n")
-		for _, columnName := range file.ColumnNames {
-			buf.WriteString("\t")
-			buf.WriteString(strings.Join(columnName.ColumnNames, file.Delimiter.ColumnDelimiter))
-			buf.WriteString("\n\t")
-			buf.WriteString("offset: ")
-			buf.WriteString(strconv.FormatInt(columnName.Offset, 10))
-			buf.WriteString("\n")
-		}
-	}
-	fmt.Println(buf.String())
+	fmt.Println("  -l, --line-delimit\t specify a line delimiter (defaults to new line")
+	fmt.Println("  -c, --column-delimit\t specify a line delimiter (defaults to new line")
 }
 
 func parseFiles(patterns []string) ([]*csvfile.CSVFile, error) {
