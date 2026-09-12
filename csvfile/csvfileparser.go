@@ -1,40 +1,19 @@
 package csvfile
 
 import (
-	"slices"
-	"strings"
-	"unicode"
-
 	"github.com/eurozulu/csvparser"
+	"github.com/eurozulu/csvparser/utils"
 	"io"
 	"os"
+	"strings"
 )
 
 const sampleSize = 25
 
-var ColumnNameChars = "_-#"
+var ColumnNameChars = []rune("_-#")
 
 var CustomLineDelimiter = ""
 var CustomColumnDelimiter = ""
-
-func IsIdentifier(s string) bool {
-	r := []rune(s)
-	if len(r) == 0 {
-		return false
-	}
-	if !unicode.IsLetter(r[0]) && !slices.Contains([]rune(ColumnNameChars), r[0]) {
-		return false
-	}
-	idChars := []rune(ColumnNameChars)
-	for _, c := range r[1:] {
-		if !unicode.IsLetter(c) &&
-			!unicode.IsNumber(c) &&
-			!slices.Contains(idChars, c) {
-			return false
-		}
-	}
-	return true
-}
 
 func IsRowIdentifiers(row Row) bool {
 	if len(row) == 0 {
@@ -44,7 +23,7 @@ func IsRowIdentifiers(row Row) bool {
 		if s == "" {
 			continue
 		}
-		if !IsIdentifier(s) {
+		if !utils.IsIdentifier(s, ColumnNameChars...) {
 			return false
 		}
 	}
