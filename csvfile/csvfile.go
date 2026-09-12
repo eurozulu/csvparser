@@ -36,6 +36,7 @@ type ColumnHeader struct {
 }
 
 func (f *CSVFile) RowSet(columnNames ...string) (*RowSet, error) {
+	columnNames = utils.RemoveEmptyStrings(columnNames)
 	headIndex := f.indexOfHeaderByNames(columnNames)
 	if headIndex == -1 && len(columnNames) > 0 {
 		return nil, fmt.Errorf("column names %q not known", strings.Join(columnNames, ", "))

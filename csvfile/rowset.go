@@ -1,6 +1,7 @@
 package csvfile
 
 import (
+	"fmt"
 	"github.com/eurozulu/csvparser"
 	"io"
 	"os"
@@ -41,9 +42,9 @@ func (r *RowSet) Rows(rowCount int) ([]Row, error) {
 		return nil, err
 	}
 	defer f.Close()
-	lr := io.LimitReader(f, r.length)
+
 	rows := make([]Row, 0, rowCount)
-	p := csvparser.NewCsvParser(lr, r.file.Delimiter)
+	p := csvparser.NewCsvParser(f, r.file.Delimiter)
 	filterCols := len(r.columnIndexes) > 0
 	for p.Scan() {
 		if rowCount >= 0 && len(rows) >= rowCount {
@@ -57,12 +58,36 @@ func (r *RowSet) Rows(rowCount int) ([]Row, error) {
 			row = filterColumns(row, r.columnIndexes)
 		}
 		rows = append(rows, row)
-
 	}
-	// reached end of rows,
+	// reached end of rows, before rowCount
 	r.offset = r.file.Length
 	r.length = 0
 	return rows, p.Err()
+}
+
+func (r *RowSet) SkipRows(rowCount int) error {
+	if rowCount == 0 {
+		return nil
+	}
+	if rowCount < 0 {
+		return fmt.Errorf("can not skip negative amount of rows")
+	}
+
+	f, err := r.openFile()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	p := csvparser.NewCsvParser(f, r.file.Delimiter)
+	count := 0
+	for p.Scan() {
+		if count >= rowCount {
+			return p.Err()
+		}
+		count++
+	}
+	return io.EOF
 }
 
 func (r *RowSet) HasColumnNames() bool {
@@ -118,5 +143,23 @@ func (r *RowSet) openFile() (io.ReadCloser, error) {
 			return nil, err
 		}
 	}
-	return file, nil
+	return newLimitReaderCloser(file, r.length), nil
+}
+
+type limitReaderCloser struct {
+	io.LimitedReader
+}
+
+func (l limitReaderCloser) Close() error {
+	if rc, ok := l.R.(io.Closer); ok {
+		return rc.Close()
+	}
+	return nil
+}
+
+func newLimitReaderCloser(r io.ReadCloser, limit int64) io.ReadCloser {
+	return &limitReaderCloser{io.LimitedReader{
+		R: r,
+		N: limit,
+	}}
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"unicode"
@@ -66,4 +67,23 @@ func IsIdentifier(s string, include ...rune) bool {
 		}
 	}
 	return true
+}
+
+func RemoveEmptyStrings[S []E, E ~string](s S) S {
+	var sz S
+	for _, ss := range s {
+		if ss == "" {
+			continue
+		}
+		sz = append(sz, ss)
+	}
+	return sz
+}
+
+func StringerStrings[S []E, E fmt.Stringer](s S) []string {
+	var sz []string
+	for _, ss := range s {
+		sz = append(sz, ss.String())
+	}
+	return sz
 }
