@@ -17,7 +17,11 @@ type rowShow struct {
 
 func (rs rowShow) ShowFiles(files []*csvfile.CSVFile) error {
 	for _, f := range files {
-		fmt.Println(f.Path)
+		id, err := f.Id()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("File: %s\t(%x)\n", f.Path, id)
 		if err := rs.ShowFile(f); err != nil {
 			return err
 		}

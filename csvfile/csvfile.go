@@ -64,7 +64,7 @@ func (f *CSVFile) RowSet(columnNames ...string) (*RowSet, error) {
 	return rs, rs.skipColumnNames()
 }
 
-func (f *CSVFile) FileHash() ([]byte, error) {
+func (f *CSVFile) Id() ([]byte, error) {
 	r, err := os.Open(f.Path)
 	if err != nil {
 		return nil, err
