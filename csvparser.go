@@ -10,7 +10,7 @@ type Parser interface {
 }
 
 type CsvParser struct {
-	Delimiter       *Delimiters
+	Delimiter       Delimiters
 	IgnoreEmptyRows bool
 	lines           *IgnoreQuotedScanner
 }
@@ -36,7 +36,7 @@ func (r *CsvParser) Err() error {
 	return r.lines.Err()
 }
 
-func NewCsvParser(r io.Reader, delimiter ...*Delimiters) *CsvParser {
+func NewCsvParser(r io.Reader, delimiter ...Delimiters) *CsvParser {
 	delimit := DelimiterOrDefault(delimiter...)
 	rwz := &CsvParser{
 		Delimiter: delimit,

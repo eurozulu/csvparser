@@ -1,6 +1,17 @@
-package csvfile
+package datasets
 
-import "unicode"
+import (
+	"errors"
+	"github.com/eurozulu/csvparser"
+	"io"
+	"strings"
+	"unicode"
+)
+
+const delimiterDetectSampleSize = 2048
+const columnDeltectMaxCellCount = 25
+
+var KnowLineDelimiters = []string{"\n\r", "\r\n", "\n", "\r"}
 
 // delimitOptions tunes the detector. The zero value is usable and gives the defaults
 // described on each field.
@@ -28,13 +39,6 @@ type delimitResult struct {
 	Score     int      // Count * len([]rune(Delimiter)) -- runes covered
 }
 
-// DetectColumnDelimter returns the most likely delimiter in s, or ok == false when s shows no
-// repeated separating pattern.
-func DetectColumnDelimter(s string) (string, bool) {
-	r, ok := detectWithOptions(s, delimitOptions{})
-	return r.Delimiter, ok
-}
-
 // Split splits s on its detected delimiter. When no delimiter is found the
 // whole string is returned as a single field.
 //func Split(s string) []string {
@@ -44,7 +48,7 @@ func DetectColumnDelimter(s string) (string, bool) {
 //	return []string{s}
 //}
 
-// detectWithOptions is DetectColumnDelimter with explicit tuning.
+// detectWithOptions is detectColumnDelimter with explicit tuning.
 //
 // The algorithm:
 //
@@ -266,4 +270,75 @@ func isPunct(s string) bool {
 		}
 	}
 	return true
+}
+
+func detectLineDelimiter(data string) string {
+	var mostIndex, most int = -1, 0
+	for i, d := range KnowLineDelimiters {
+		ss := csvparser.IgnoreQuotedSplitN(data, d, 10)
+		if len(ss) > (most + 1) {
+			most = len(ss)
+			mostIndex = i
+		}
+	}
+	if mostIndex == -1 {
+		return ""
+	}
+	return KnowLineDelimiters[mostIndex]
+}
+
+// detectColumnDelimter returns the most likely delimiter or ok == false when s shows no
+// repeated separating pattern.
+func detectColumnDelimter(data string, lineDelimiter string) string {
+	found := map[string]int{}
+	scn := csvparser.NewIgnoreQuotedScanner(strings.NewReader(data), lineDelimiter)
+	for scn.Scan() {
+		text := strings.TrimSpace(scn.Text())
+		if text == "" {
+			continue
+		}
+		res, ok := detectWithOptions(text, delimitOptions{})
+		if !ok {
+			continue
+		}
+		row := csvparser.IgnoreQuotedSplit(text, res.Delimiter)
+		count := found[res.Delimiter] + len(row)
+		if count > columnDeltectMaxCellCount {
+			break
+		}
+		found[res.Delimiter] = count
+	}
+	var count int
+	var delimit string
+	for d, c := range found {
+		if c > count {
+			delimit = d
+			count = c
+		}
+	}
+	return delimit
+}
+
+func DetectDelimiters(path string) (*csvparser.Delimiters, error) {
+	f, err := openFileBlock(path, 0, delimiterDetectSampleSize)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	ld := detectLineDelimiter(string(data))
+	if ld == "" {
+		return nil, errors.New("failed to detect a known line delimiter")
+	}
+	cd := detectColumnDelimter(string(data), ld)
+	if cd == "" {
+		return nil, errors.New("failed to detect a column delimiter")
+	}
+	return &csvparser.Delimiters{
+		LineDelimiter:   ld,
+		ColumnDelimiter: cd,
+	}, nil
 }

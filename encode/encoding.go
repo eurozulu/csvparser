@@ -15,33 +15,7 @@ type CSVMarshaller interface {
 	MarshalCSV() ([]byte, error)
 }
 
-func fieldNamesOfStruct(v any) []string {
-	t := reflect.TypeOf(v)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-	if t.Kind() != reflect.Struct {
-		panic("csvparser.ColumnNames: not a struct")
-	}
-	names := make([]string, 0, t.NumField())
-	for i := 0; i < t.NumField(); i++ {
-		fld := t.Field(i)
-		if !fld.IsExported() {
-			continue
-		}
-		if tag, ok := fld.Tag.Lookup(CSVTag); ok {
-			if tag == "-" {
-				continue
-			}
-			names = append(names, tag)
-		} else {
-			names = append(names, strings.ToLower(fld.Name))
-		}
-	}
-	return names
-}
-
-func MarshallCSVSlice[S any](out io.Writer, includeHeaders bool, v []S, delimiters ...*csvparser.Delimiters) error {
+func MarshallCSVSlice[S any](out io.Writer, includeHeaders bool, v []S, delimiters ...csvparser.Delimiters) error {
 	delimit := csvparser.DelimiterOrDefault(delimiters...)
 
 	if includeHeaders {
@@ -70,7 +44,7 @@ func MarshallCSVSlice[S any](out io.Writer, includeHeaders bool, v []S, delimite
 	return nil
 }
 
-func MarshallCSV(v any, delimiters ...*csvparser.Delimiters) ([]byte, error) {
+func MarshallCSV(v any, delimiters ...csvparser.Delimiters) ([]byte, error) {
 	delimit := csvparser.DelimiterOrDefault(delimiters...)
 
 	if cv, ok := v.(CSVMarshaller); ok {
@@ -111,4 +85,30 @@ func MarshallCSV(v any, delimiters ...*csvparser.Delimiters) ([]byte, error) {
 		buf.WriteString(delimit.LineDelimiter)
 	}
 	return buf.Bytes(), nil
+}
+
+func fieldNamesOfStruct(v any) []string {
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		panic("csvparser.ColumnNames: not a struct")
+	}
+	names := make([]string, 0, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		fld := t.Field(i)
+		if !fld.IsExported() {
+			continue
+		}
+		if tag, ok := fld.Tag.Lookup(CSVTag); ok {
+			if tag == "-" {
+				continue
+			}
+			names = append(names, tag)
+		} else {
+			names = append(names, strings.ToLower(fld.Name))
+		}
+	}
+	return names
 }
