@@ -79,6 +79,19 @@ func (f *CSVFile) Id() ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
+func (f *CSVFile) UnmarshalText(text []byte) error {
+	file, err := ParseCSvFile(string(text))
+	if err != nil {
+		return err
+	}
+	*f = *file
+	return nil
+}
+
+func (f *CSVFile) MarshalText() (text []byte, err error) {
+	return []byte(f.Path), nil
+}
+
 func (f *CSVFile) indexOfHeaderByNames(names ColumnNames) int {
 	for i := len(f.ColumnHeaders) - 1; i >= 0; i-- {
 		if !utils.ContainsAll(f.ColumnHeaders[i].ColumnNames, names) {
