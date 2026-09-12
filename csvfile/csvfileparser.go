@@ -129,6 +129,7 @@ func ParseCSvFile(path string) (*CSVFile, error) {
 	}
 	if fi, err := os.Stat(file.Path); err == nil {
 		file.Length = fi.Size()
+		file.Modified = fi.ModTime().Unix()
 	}
 
 	idRows := findIdentifierRows(rows)

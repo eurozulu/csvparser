@@ -26,6 +26,7 @@ type CSVFile struct {
 	Delimiter     *csvparser.Delimiters `csv:"delimiters"`
 	ColumnHeaders []*ColumnHeader       `csv:"column-headers"`
 	Length        int64                 `csv:"length"`
+	Modified      int64                 `csv:"modified"`
 }
 
 type ColumnHeader struct {
