@@ -18,12 +18,9 @@ var defaultDelimiters = Delimiters{
 	ColumnDelimiter: ",",
 }
 
-func DelimiterOrDefault(delimiters ...*Delimiters) *Delimiters {
-	if len(delimiters) == 0 || delimiters[0] == nil {
-		return &Delimiters{
-			LineDelimiter:   defaultDelimiters.LineDelimiter,
-			ColumnDelimiter: defaultDelimiters.ColumnDelimiter,
-		}
+func DelimiterOrDefault(delimiters ...Delimiters) Delimiters {
+	if len(delimiters) == 0 {
+		return defaultDelimiters
 	}
 	return delimiters[0]
 }

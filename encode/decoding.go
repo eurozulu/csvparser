@@ -6,42 +6,28 @@ import (
 	"github.com/eurozulu/csvparser"
 	"io"
 	"reflect"
-	"strings"
 )
 
 type CSVUnmarshaller interface {
 	UnmarshalCSV(data []byte) error
 }
 
-func UnmarshallCSVSlice[S any](in io.Reader, withHeader bool, delimiters ...*csvparser.Delimiters) ([]S, error) {
+func UnmarshallCSVSlice[S any](in io.Reader, delimiters ...csvparser.Delimiters) ([]S, error) {
 	delimit := csvparser.DelimiterOrDefault(delimiters...)
-	p := csvparser.NewCsvParser(in, delimit)
+	scn := csvparser.NewIgnoreQuotedScanner(in, delimit.LineDelimiter)
 	var result []S
-	if withHeader {
-		if !p.Scan() {
-			return result, errors.New("csvparser: no header")
-		}
+	for scn.Scan() {
 		var s S
-		names := fieldNamesOfStruct(s)
-		row := p.Row()
-		if strings.Join(names, "") != strings.Join(row, "") {
-			return result, fmt.Errorf("header mismatch, expected %q but found %q", names, row)
-		}
-	}
-
-	for p.Scan() {
-		row := strings.Join(p.Row(), delimit.ColumnDelimiter)
-		var s S
-		err := UnmarshallCSV([]byte(row), s, delimit)
+		err := UnmarshallCSV(scn.Bytes(), &s, delimit)
 		if err != nil {
 			return nil, err
 		}
 		result = append(result, s)
 	}
-	return result, p.Err()
+	return result, scn.Err()
 }
 
-func UnmarshallCSV(data []byte, v any, delimiters ...*csvparser.Delimiters) error {
+func UnmarshallCSV(data []byte, v any, delimiters ...csvparser.Delimiters) error {
 	delimit := csvparser.DelimiterOrDefault(delimiters...)
 	if cv, ok := v.(CSVUnmarshaller); ok {
 		return cv.UnmarshalCSV(data)
@@ -62,10 +48,6 @@ func UnmarshallCSV(data []byte, v any, delimiters ...*csvparser.Delimiters) erro
 	if len(row) == 0 {
 		return fmt.Errorf("UnmarshallCSV: empty row")
 	}
-
-	//if len(row) > t.NumField() {
-	//	return errors.New("UnmarshallCSV: too many cells for fields")
-	//}
 
 	var count int
 	for i := 0; i < t.NumField(); i++ {

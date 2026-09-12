@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/eurozulu/csvparser/csvfile"
+	"github.com/eurozulu/csvparser"
+	"github.com/eurozulu/csvparser/datasets"
 	"os"
 	"path/filepath"
 	"time"
@@ -25,20 +26,32 @@ func main() {
 		showhelp()
 		exitError(fmt.Errorf("must provide a filename of the csv file to parse"))
 	}
+
+	var delimit *csvparser.Delimiters
 	if flg, ok := args.Flag("line-delimit", "l"); ok {
 		if flg == "" {
 			exitError(fmt.Errorf("must provide a line delimiter"))
 		}
-		csvfile.CustomLineDelimiter = flg
+		d := csvparser.DelimiterOrDefault()
+		d.LineDelimiter = flg
+		delimit = &d
 	}
 	if flg, ok := args.Flag("column-delimit", "c"); ok {
 		if flg == "" {
 			exitError(fmt.Errorf("must provide a column delimiter"))
 		}
-		csvfile.CustomColumnDelimiter = flg
+		if delimit == nil {
+			d := csvparser.DelimiterOrDefault()
+			delimit = &d
+		}
+		delimit.ColumnDelimiter = flg
 	}
 
-	filez, err := parseFiles(patterns)
+	var dlz []csvparser.Delimiters
+	if delimit != nil {
+		dlz = append(dlz, *delimit)
+	}
+	filez, err := parseFiles(patterns, dlz...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		if len(filez) == 0 {
@@ -47,14 +60,16 @@ func main() {
 	}
 
 	if _, ok := args.Flag("info", "i"); ok {
-		fileShow{}.ShowFilesInfo(filez)
+		if err := (&fileShow{}).ShowFilesInfo(filez); err != nil {
+			exitError(err)
+		}
 		return
 	}
 
 	colNames, _ := args.Flag("column-names", "n")
 	rShow := &rowShow{
 		ShowHeaders: args.ContainsFlag("show-headers", "h"),
-		ColumnNames: colNames,
+		ColumnNames: csvparser.IgnoreQuotedSplit(colNames, ","),
 	}
 
 	if err = rShow.ShowFiles(filez); err != nil {
@@ -73,8 +88,8 @@ func showhelp() {
 	fmt.Println("  -c, --column-delimit\t specify a line delimiter (defaults to new line")
 }
 
-func parseFiles(patterns []string) ([]*csvfile.CSVFile, error) {
-	var files []*csvfile.CSVFile
+func parseFiles(patterns []string, delimiter ...csvparser.Delimiters) ([]*datasets.CSVFile, error) {
+	var files []*datasets.CSVFile
 	for _, pattern := range patterns {
 		fileNames, err := filepath.Glob(pattern)
 		if err != nil {
@@ -83,7 +98,7 @@ func parseFiles(patterns []string) ([]*csvfile.CSVFile, error) {
 		if len(fileNames) == 0 {
 			return nil, fmt.Errorf("no files found with %q", pattern)
 		}
-		filez, err := csvfile.ParseCSVFiles(fileNames)
+		filez, err := datasets.ParseCSVFiles(fileNames, delimiter...)
 		if err != nil {
 			return nil, err
 		}

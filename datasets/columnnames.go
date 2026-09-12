@@ -1,3 +1,3 @@
-package csvfile
+package datasets
 
 type ColumnNames []string
