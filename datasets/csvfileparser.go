@@ -14,6 +14,7 @@ func ParseCSvFile(path string, delimiter ...csvparser.Delimiters) (*CSVFile, err
 	if err != nil {
 		return nil, err
 	}
+
 	var delimit *csvparser.Delimiters
 	if len(delimiter) > 0 {
 		delimit = &delimiter[0]
